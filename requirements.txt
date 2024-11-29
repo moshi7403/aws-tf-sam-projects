@@ -1,0 +1,3 @@
+sam build --template-file service-templates/ec2.yaml
+sam deploy --template-file service-templates/ec2.yaml
+sam delete --stack-name mosh-ec2
