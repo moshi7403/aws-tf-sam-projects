@@ -1,0 +1,109 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'  # Enables SAM features
+Description: "CICD App Hosting: GitHub, CodePipeline, S3 and SSM Parameter Store"
+
+Resources:
+  # Service: S3 Bucket where app will be hosted
+  WebsiteS3Bucket:
+    Type: 'AWS::S3::Bucket'
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: mmr-static-website-artifact-bucket
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+
+  ## Custom Bucket Policy for Public Access
+  BucketPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      PolicyDocument:
+        Id: MyPolicy
+        Version: 2012-10-17
+        Statement:
+          - Sid: PublicReadForGetBucketObjects
+            Effect: Allow
+            Principal: '*'
+            Action: 's3:GetObject'
+            Resource:
+              Fn::Sub: 'arn:aws:s3:::mmr-static-website-artifact-bucket/*'
+      Bucket: !Ref WebsiteS3Bucket
+
+  # Service: CodePipeline Role
+  PipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codepipeline.amazonaws.com
+            Action: sts:AssumeRole
+      # Specific permission to the above role
+      Policies:
+        - PolicyName: FullAdminAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: "*"
+                Resource: "*"
+
+  # Service: CodePipeline
+  MyCodePipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      RoleArn: !GetAtt PipelineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref WebsiteS3Bucket
+
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: GithubSource
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Provider: GitHub
+                Version: 1
+              Configuration:
+                Owner: moshi7403                   # Replace with your GitHub username
+                Repo: mmr_apps                     # Replace with your GitHub repository name
+                Branch: main                       # Replace with your branch name
+                OAuthToken: !Ref GitHubTokenSecret
+              OutputArtifacts:
+                - Name: SourceOutput
+              RunOrder: 1
+
+        - Name: Deploy
+          Actions:
+            - Name: DeployToS3
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: S3
+                Version: 1
+              Configuration:
+                BucketName: !Ref WebsiteS3Bucket
+                Extract: true
+              InputArtifacts:
+                - Name: SourceOutput
+              RunOrder: 1
+
+  # GitHub Token Parameter (SecureString in AWS Secrets Manager or Systems Manager)
+  GitHubTokenSecret:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: GitHubOAuthToken
+      Type: String
+      Value:                            # Replace with your GitHub token
+      #Value: !Ref AuthToken # Replace with your GitHub token
