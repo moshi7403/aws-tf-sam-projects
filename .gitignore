@@ -244,3 +244,29 @@ $RECYCLE.BIN/
 # End of https://www.gitignore.io/api/osx,linux,python,windows,pycharm,visualstudiocode
 
 .idea/
+
+# AWS SAM
+.aws-sam/
+.serverless/
+build/
+dist/
+node_modules/
+venv/
+.env
+.env.*
+
+# Logs
+*.log
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Terraform
+*.tfstate
+*.tfstate.backup
+*.tfvars
+*.auto.tfvars
+*.tfplan
+.terraform/
+.terraform.lock.hcl
