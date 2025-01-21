@@ -13,7 +13,7 @@ The architecture includes:
 4. **SSM Parameter Store**: Stores the GitHub OAuth token securely.
 
 ### **Diagram**
-![Architecture Diagram](./architecture.png)
+![Architecture Diagram](architecture.png)
 
 ---
 

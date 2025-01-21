@@ -1,77 +1,103 @@
-# aws-sam-cf
+# Project Directory Overview
 
-This project contains source code and supporting files for a serverless application that you can deploy with the SAM CLI. It includes the following files and folders.
+This directory contains multiple projects and resources for deployment and infrastructure management. The following subdirectories are included:
 
-- events - Invocation events that you can use to invoke the function.
-- template.yaml - A template that defines the application's AWS resources.
-- service-templates
-- etc
+1. **sam**: Contains projects related to AWS Serverless Application Model (SAM).
+2. **terraform**: Contains Terraform scripts for infrastructure as code.
 
-## Deploy the sample application/resources
+## Navigating the Directory
 
-The Serverless Application Model Command Line Interface (SAM CLI) is an extension of the AWS CLI that adds functionality for building and testing Lambda applications. It uses Docker to run your functions in an Amazon Linux environment that matches Lambda. It can also emulate your application's build environment and API.
+To navigate to specific directories, use the following commands:
 
-To use the SAM CLI, you need the following tools.
-
-* SAM CLI - [Install the SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html)
-* [Python 3 installed](https://www.python.org/downloads/)
-* Docker - [Install Docker community edition](https://hub.docker.com/search/?type=edition&offering=community)
-
-To build and deploy your application for the first time, run the following in your shell:
-
+### Change to the `sam` Directory
 ```bash
-sam build --use-container
-sam deploy --guided
+cd sam
 ```
 
-The first command will build the source of your application. The second command will package and deploy your application to AWS, with a series of prompts:
-
-* **Stack Name**: The name of the stack to deploy to CloudFormation. This should be unique to your account and region, and a good starting point would be something matching your project name.
-* **AWS Region**: The AWS region you want to deploy your app to.
-* **Confirm changes before deploy**: If set to yes, any change sets will be shown to you before execution for manual review. If set to no, the AWS SAM CLI will automatically deploy application changes.
-* **Allow SAM CLI IAM role creation**: Many AWS SAM templates, including this example, create AWS IAM roles required for the AWS Lambda function(s) included to access AWS services. By default, these are scoped down to minimum required permissions. To deploy an AWS CloudFormation stack which creates or modifies IAM roles, the `CAPABILITY_IAM` value for `capabilities` must be provided. If permission isn't provided through this prompt, to deploy this example you must explicitly pass `--capabilities CAPABILITY_IAM` to the `sam deploy` command.
-* **Save arguments to samconfig.toml**: If set to yes, your choices will be saved to a configuration file inside the project, so that in the future you can just re-run `sam deploy` without parameters to deploy changes to your application.
-
-You can find your API Gateway Endpoint URL in the output values displayed after deployment.
-
-## Use the SAM CLI to build and test locally
-
-Build your application with the `sam build --use-container` command.
-
+### Change to the `terraform` Directory
 ```bash
-aws-sam-cf$ sam build --use-container
+cd terraform
 ```
 
-The SAM CLI installs dependencies defined in `hello_world/requirements.txt`, creates a deployment package, and saves it in the `.aws-sam/build` folder.
+## Deployment Instructions
 
-Test a single function by invoking it directly with a test event. An event is a JSON document that represents the input that the function receives from the event source. Test events are included in the `events` folder in this project.
+### Deploying SAM Projects
 
-Run functions locally and invoke them with the `sam local invoke` command.
+1. Navigate to the `sam` directory:
+   ```bash
+   cd sam
+   ```
+2. Install required dependencies (if any):
+   ```bash
+   npm install
+   ```
+3. Package the SAM application:
+   ```bash
+   sam package \
+       --template-file template.yaml \
+       --s3-bucket <YOUR_S3_BUCKET_NAME> \
+       --output-template-file packaged-template.yaml
+   ```
+4. Deploy the SAM application:
+   ```bash
+   sam deploy \
+       --template-file packaged-template.yaml \
+       --stack-name <YOUR_STACK_NAME> \
+       --capabilities CAPABILITY_IAM
+   ```
+5. Delete the SAM stack:
+   ```bash
+   sam delete
+   ```
 
-```bash
-aws-sam-cf$ sam local invoke HelloWorldFunction --event events/event.json
-```
+### Deploying Terraform Configurations
 
-The SAM CLI can also emulate your application's API. Use the `sam local start-api` to run the API locally on port 3000.
+1. Navigate to the `terraform` directory:
+   ```bash
+   cd terraform
+   ```
+2. Initialize Terraform:
+   ```bash
+   terraform init
+   ```
+3. Review the execution plan:
+   ```bash
+   terraform plan
+   ```
+4. Apply the Terraform configuration to deploy resources:
+   ```bash
+   terraform apply
+   ```
+5. Apply changes to a specific target:
+   ```bash
+   terraform apply -target=<RESOURCE_NAME>
+   ```
+6. Destroy resources automatically without confirmation:
+   ```bash
+   terraform destroy --auto-approve
+   ```
+7. Get help for the `terraform apply` command:
+   ```bash
+   terraform apply -help
+   ```
+8. Use `-Y` option with `terraform apply` (if supported):
+   ```bash
+   terraform apply -Y
+   ```
 
-```bash
-aws-sam-cf$ sam local start-api
-aws-sam-cf$ curl http://localhost:3000/
-```
+## Additional Notes
 
-## Add a resource to your application
-The application template uses AWS Serverless Application Model (AWS SAM) to define application resources. AWS SAM is an extension of AWS CloudFormation with a simpler syntax for configuring common serverless application resources such as functions, triggers, and APIs. For resources not included in [the SAM specification](https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md), you can use standard [AWS CloudFormation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-template-resource-type-ref.html) resource types.
+- Replace placeholders like `<YOUR_S3_BUCKET_NAME>` and `<YOUR_STACK_NAME>` with actual values specific to your environment.
+- Ensure you have the necessary permissions and tools installed, such as AWS CLI for SAM and Terraform CLI for Terraform.
+- For detailed information about individual projects, refer to the respective project directories.
 
-## Cleanup
+## Prerequisites
 
-To delete the sample application that you created, use the AWS CLI. Assuming you used your project name for the stack name, you can run the following:
+- **AWS CLI**: [Install AWS CLI](https://aws.amazon.com/cli/).
+- **SAM CLI**: [Install SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html).
+- **Terraform CLI**: [Install Terraform CLI](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli).
 
-```bash
-sam delete --stack-name "aws-sam-cf"
-```
+---
 
-## Resources
+Feel free to reach out to the team for additional support or clarification on the deployment process.
 
-See the [AWS SAM developer guide](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/what-is-sam.html) for an introduction to SAM specification, the SAM CLI, and serverless application concepts.
-
-Next, you can use AWS Serverless Application Repository to deploy ready to use Apps that go beyond hello world samples and learn how authors developed their applications: [AWS Serverless Application Repository main page](https://aws.amazon.com/serverless/serverlessrepo/)
