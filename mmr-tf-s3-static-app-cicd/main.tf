@@ -2,6 +2,39 @@ provider "aws" {
   region = "us-east-1"
 }
 
+# CodeBuild Project
+resource "aws_codebuild_project" "codebuild_project" {
+  name         = "MyCodeBuildProject"
+  description  = "Build project for static website"
+  service_role = aws_iam_role.codebuild_role.arn
+  build_timeout = 30                              # minutes
+
+  artifacts {
+    type = "S3"
+    location = aws_s3_bucket.website_s3_bucket_001.bucket
+    packaging = "ZIP"
+  }
+
+  environment {
+    compute_type = "BUILD_GENERAL1_SMALL"
+    image        = "aws/codebuild/standard:5.0"
+    type         = "LINUX_CONTAINER"
+    privileged_mode = false
+
+    environment_variable {
+      name  = "ENV"
+      value = "production"
+    }
+  }
+
+  source {
+    type = "GITHUB"
+    location        = "https://github.com/moshi7403/mmr_apps.git"
+    buildspec       = "buildspec.yml" # Ensure this file exists in your repo
+    git_clone_depth = 1
+  }
+}
+
 # S3 Bucket for Website
 resource "aws_s3_bucket" "website_s3_bucket_001" {
   bucket = "mmr-static-website-artifact-bucket-001"
@@ -210,37 +243,4 @@ resource "aws_iam_role_policy" "codebuild_policy" {
     }
     ]
   })
-}
-
-# CodeBuild Project
-resource "aws_codebuild_project" "codebuild_project" {
-  name         = "MyCodeBuildProject"
-  description  = "Build project for static website"
-  service_role = aws_iam_role.codebuild_role.arn
-  build_timeout = 30                              # minutes
-
-  artifacts {
-    type = "S3"
-    location = aws_s3_bucket.website_s3_bucket_001.bucket
-    packaging = "ZIP"
-  }
-
-  environment {
-    compute_type = "BUILD_GENERAL1_SMALL"
-    image        = "aws/codebuild/standard:5.0"
-    type         = "LINUX_CONTAINER"
-    privileged_mode = false
-
-    environment_variable {
-      name  = "ENV"
-      value = "production"
-    }
-  }
-
-  source {
-    type = "GITHUB"
-    location        = "https://github.com/moshi7403/mmr_apps.git"
-    buildspec       = "buildspec.yml" # Ensure this file exists in your repo
-    git_clone_depth = 1
-  }
 }

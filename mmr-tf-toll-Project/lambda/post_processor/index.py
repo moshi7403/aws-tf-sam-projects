@@ -1,32 +1,32 @@
 import json
 import boto3
 import os
-import base64
 
-firehose = boto3.client('firehose')
-stream_name = os.environ['FIREHOSE_STREAM_NAME']
+s3 = boto3.client('s3')
+FINAL_BUCKET = os.environ['FINAL_BUCKET']
 
 def handler(event, context):
-    print("Received event:", json.dumps(event))
+    print("Event received:", json.dumps(event))
 
-    if "body" in event:
-        body = event["body"]
+    for record in event['Records']:
+        src_bucket = record['s3']['bucket']['name']
+        src_key = record['s3']['object']['key']
 
-        if event.get("isBase64Encoded", False):
-            # If API Gateway sent base64 data, decode it
-            body = base64.b64decode(body).decode('utf-8')
+        new_key = f"processed/{src_key.split('/')[-1]}"
 
-        payload = json.loads(body)  # parse as JSON to ensure it's clean
-        final_payload = json.dumps(payload) + "\n"  # Important for Firehose
-
-        response = firehose.put_record(
-            DeliveryStreamName=stream_name,
-            Record={'Data': final_payload.encode('utf-8')}
+        # Copy to final bucket
+        s3.copy_object(
+            CopySource={'Bucket': src_bucket, 'Key': src_key},
+            Bucket=FINAL_BUCKET,
+            Key=new_key
         )
 
-        print("Firehose put_record response:", response)
+        # Delete from landing bucket
+        s3.delete_object(Bucket=src_bucket, Key=src_key)
+
+        print(f"Moved {src_key} to {FINAL_BUCKET}/{new_key}")
 
     return {
         'statusCode': 200,
-        'body': json.dumps('Data sent to Firehose')
+        'body': json.dumps('Moved successfully')
     }
